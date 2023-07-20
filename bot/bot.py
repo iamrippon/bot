@@ -1,58 +1,25 @@
-import asyncio
+import discord
+from discord.ext import commands
 
-import aiohttp
-from pydis_core import BotBase
-from sentry_sdk import push_scope
+# Replace 'YOUR_BOT_TOKEN' with the actual token you copied from the Discord Developer Portal
+bot_token = 'MTA3NTQ4MDEyNjc3MjQ5ODUyNQ.G-lRcP.smLpPr9qu4E8JABwZJIyungZ6--7HsKrHC-7mA'
 
-from bot import constants, exts
-from bot.log import get_logger
+# Prefix for bot commands
+bot_prefix = '!'
 
-log = get_logger("bot")
+# Create a new bot instance with a specified command prefix
+bot = commands.Bot(command_prefix=bot_prefix)
 
+# Event: Bot is ready and connected to Discord
+@bot.event
+async def on_ready():
+    print(f'Logged in as {bot.user.name}')
 
-class StartupError(Exception):
-    """Exception class for startup errors."""
+# Command: !hello
+@bot.command()
+async def hello(ctx):
+    await ctx.send(f'Hello {ctx.author.mention}!')
 
-    def __init__(self, base: Exception):
-        super().__init__()
-        self.exception = base
-
-
-class Bot(BotBase):
-    """A subclass of `pydis_core.BotBase` that implements bot-specific functions."""
-
-    def __init__(self, *args, **kwargs):
-
-        super().__init__(*args, **kwargs)
-
-    async def ping_services(self) -> None:
-        """A helper to make sure all the services the bot relies on are available on startup."""
-        # Connect Site/API
-        attempts = 0
-        while True:
-            try:
-                log.info(f"Attempting site connection: {attempts + 1}/{constants.URLs.connect_max_retries}")
-                await self.api_client.get("healthcheck")
-                break
-
-            except (aiohttp.ClientConnectorError, aiohttp.ServerDisconnectedError):
-                attempts += 1
-                if attempts == constants.URLs.connect_max_retries:
-                    raise
-                await asyncio.sleep(constants.URLs.connect_cooldown)
-
-    async def setup_hook(self) -> None:
-        """Default async initialisation method for discord.py."""
-        await super().setup_hook()
-        await self.load_extensions(exts)
-
-    async def on_error(self, event: str, *args, **kwargs) -> None:
-        """Log errors raised in event listeners rather than printing them to stderr."""
-        self.stats.incr(f"errors.event.{event}")
-
-        with push_scope() as scope:
-            scope.set_tag("event", event)
-            scope.set_extra("args", args)
-            scope.set_extra("kwargs", kwargs)
-
-            log.exception(f"Unhandled exception in {event}.")
+# Run the bot with the specified token
+bot.run(bot_token)
+MTA3NTQ4MDEyNjc3MjQ5ODUyNQ.G-lRcP.smLpPr9qu4E8JABwZJIyungZ6--7HsKrHC-7mA
